@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ game.name }} | KeremHub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { background: #050505; color: #fff; font-family: 'Outfit', sans-serif; margin: 0; line-height: 1.6; }
+        .hero { width: 100%; height: 50vh; background: url('{{ game.screenshots[0].path_full if game.screenshots else "" }}') center/cover; position: relative; }
+        .overlay { position: absolute; inset: 0; background: linear-gradient(to top, #050505, transparent); }
+        .container { max-width: 1100px; margin: -100px auto 0; padding: 0 20px; position: relative; display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
+        .box { background: #121212; border: 1px solid #222; padding: 30px; border-radius: 24px; margin-bottom: 25px; }
+        .price-sticky { position: sticky; top: 30px; }
+        .btn-buy { display: block; background: #3b82f6; color: white; text-align: center; padding: 18px; border-radius: 14px; text-decoration: none; font-weight: 800; font-size: 18px; transition: 0.3s; }
+        .btn-buy:hover { background: #2563eb; transform: scale(1.02); }
+        .review { border-left: 2px solid #3b82f6; padding-left: 20px; margin-bottom: 25px; color: #aaa; font-size: 15px; }
+        .sys-req { font-size: 13px; color: #888; }
+        .sys-req b, .sys-req strong { color: #fff; }
+    </style>
+</head>
+<body>
+    <div class="hero"><div class="overlay"></div></div>
+    <div class="container">
+        <div class="main-info">
+            <h1 style="font-size: 52px; margin: 0 0 10px;">{{ game.name }}</h1>
+            <p style="font-size: 18px; color: #888; margin-bottom: 40px;">{{ game.developers[0] if game.developers else "" }} • {{ game.genres[0].description if game.genres else "" }}</p>
+
+            <div class="box">
+                <h3 style="color: #3b82f6;">📢 Son Kullanıcı Yorumları</h3>
+                {% if reviews.reviews %}
+                    {% for r in reviews.reviews[:3] %}
+                    <div class="review">
+                        "{{ r.review[:300] }}..."
+                        <div style="margin-top: 10px; font-size: 12px; color: #555;">Kullanıcı Puanı: {{ '👍 Tavsiye Ediyor' if r.voted_up else '👎 Tavsiye Etmiyor' }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>Henüz yorum bulunamadı.</p>
+                {% endif %}
+            </div>
+
+            <div class="box">
+                <h3>🖥️ Sistem Gereksinimleri</h3>
+                <div class="sys-req">{{ game.pc_requirements.minimum | safe }}</div>
+            </div>
+        </div>
+
+        <div class="sidebar-info">
+            <div class="box price-sticky">
+                <img src="{{ game.header_image }}" style="width: 100%; border-radius: 12px; margin-bottom: 20px;">
+                <div style="font-size: 14px; color: #555;">GÜNCEL FİYAT</div>
+                <div style="font-size: 36px; font-weight: 800; margin: 10px 0;">{{ game.price_overview.final_formatted if game.price_overview else 'Ücretsiz' }}</div>
+                
+                <div style="display: flex; gap: 10px; margin: 20px 0;">
+                    <div style="flex: 1; background: #1a1a1a; padding: 10px; border-radius: 10px; text-align: center;">
+                        <small style="color: #555; display: block;">BOYUT</small>
+                        <strong>{{ (game.pc_requirements.minimum.split('storage')[-1][:5]) if 'storage' in game.pc_requirements.minimum else 'N/A' }}</strong>
+                    </div>
+                    <div style="flex: 1; background: #1a1a1a; padding: 10px; border-radius: 10px; text-align: center;">
+                        <small style="color: #555; display: block;">TÜRKÇE</small>
+                        <strong>{{ 'Evet' if 'Turkish' in game.supported_languages else 'Hayır' }}</strong>
+                    </div>
+                </div>
+
+                <a href="https://store.steampowered.com/app/{{ game.steam_appid }}" target="_blank" class="btn-buy">STEAM'DE GÖR</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

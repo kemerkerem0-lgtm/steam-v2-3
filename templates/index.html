@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEREMHUB // Digital Universe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #3b82f6; --accent: #10b981; --bg: #050505; --surface: #121212; --text: #fff; }
+        body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; display: flex; }
+        
+        .sidebar { width: 260px; height: 100vh; position: fixed; background: #000; border-right: 1px solid #1f1f1f; display: flex; flex-direction: column; padding: 30px 20px; box-sizing: border-box; }
+        .logo { font-size: 26px; font-weight: 800; background: linear-gradient(45deg, var(--primary), var(--accent)); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px; }
+        
+        .nav-link { padding: 14px 20px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: 0.3s; color: #888; text-decoration: none; display: flex; align-items: center; gap: 12px; }
+        .nav-link.active { background: #1a1a1a; color: var(--primary); }
+        .nav-link:hover { color: #fff; background: rgba(255,255,255,0.05); }
+
+        .content { margin-left: 260px; flex: 1; padding: 40px; max-width: 1400px; }
+        .search-bar { width: 100%; max-width: 500px; background: #1a1a1a; border: 1px solid #333; padding: 14px 22px; border-radius: 30px; color: white; margin-bottom: 40px; outline: none; }
+        .search-bar:focus { border-color: var(--primary); }
+
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        .card { background: var(--surface); border-radius: 20px; overflow: hidden; transition: 0.4s; border: 1px solid #1f1f1f; text-decoration: none; color: inherit; }
+        .card:hover { transform: translateY(-10px); border-color: var(--primary); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+        .card-info { padding: 20px; }
+        .discount-tag { background: var(--accent); color: #000; font-weight: 800; padding: 4px 10px; border-radius: 8px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="logo">KEREMHUB</div>
+    <a href="#" class="nav-link active" data-filter="kesfet">🏠 <span>Keşfet</span></a>
+    <a href="#" class="nav-link" data-filter="trend">🔥 <span>Trendler</span></a>
+    <a href="#" class="nav-link" data-filter="indirim">🏷️ <span>Fırsatlar</span></a>
+    <a href="#" class="nav-link" data-filter="yeni">✨ <span>Yeni Çıkanlar</span></a>
+    <a href="#" class="nav-link" data-filter="rastgele" style="color: var(--accent);">🎲 <span>Şanslıyım?</span></a>
+</aside>
+
+<main class="content">
+    <input type="text" class="search-bar" placeholder="Hangi oyunu merak ediyorsun?" id="searchInput">
+    
+    <h2 id="sectionTitle" style="font-size: 32px; margin-bottom: 30px;">Keşfet</h2>
+    <div class="game-grid" id="gameGrid">
+        {% for oyun in content.specials %}
+        <a href="/game/{{ oyun.id }}" class="card">
+            <img src="{{ oyun.large_capsule_image }}" class="card-img">
+            <div class="card-info">
+                <h3 style="margin:0; font-size: 19px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ oyun.name }}</h3>
+                <div style="margin-top:15px; display:flex; justify-content: space-between; align-items: center;">
+                    <span class="discount-tag">-%{{ oyun.discount_percent }}</span>
+                    <span style="font-weight: 800; font-size: 20px;">${{ (oyun.final_price/100)|round(2) }}</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</main>
+
+<script>
+    const gameGrid = document.getElementById('gameGrid');
+    const sectionTitle = document.getElementById('sectionTitle');
+    const searchInput = document.getElementById('searchInput');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    // BUTON GÖREVLERİ
+    navLinks.forEach(link => {
+        link.addEventListener('click', async (e) => {
+            e.preventDefault();
+            navLinks.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            
+            const type = link.getAttribute('data-filter');
+            sectionTitle.innerText = "Yükleniyor...";
+            
+            const res = await fetch(`/api/filter/${type}`);
+            const data = await res.json();
+            
+            sectionTitle.innerText = link.innerText.trim();
+            renderGames(data);
+        });
+    });
+
+    // CANLI ARAMA
+    searchInput.addEventListener('input', async (e) => {
+        const q = e.target.value;
+        if (q.length > 2) {
+            const res = await fetch(`/api/search?q=${q}`);
+            const data = await res.json();
+            sectionTitle.innerText = `"${q}" Sonuçları`;
+            renderGames(data);
+        }
+    });
+
+    function renderGames(games) {
+        gameGrid.innerHTML = games.map(g => `
+            <a href="/game/${g.id}" class="card">
+                <img src="${g.large_capsule_image || g.header_image || (g.tiny_image ? g.tiny_image.replace('capsule_sm_120', 'header') : '')}" class="card-img">
+                <div class="card-info">
+                    <h3 style="margin:0;">${g.name}</h3>
+                    <div style="margin-top:15px; font-weight: 800; font-size: 18px;">
+                        ${g.price ? (g.price.final/100).toFixed(2) + ' $' : (g.final_price ? (g.final_price/100).toFixed(2) + ' $' : 'İncele')}
+                    </div>
+                </div>
+            </a>
+        `).join('');
+    }
+</script>
+</body>
+</html>
